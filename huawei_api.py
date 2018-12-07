@@ -9,6 +9,8 @@ import uuid
 import hashlib
 import hmac
 import logging
+import os
+import time
 from binascii import hexlify
 from collections import OrderedDict
 from datetime import datetime
@@ -36,6 +38,7 @@ class HuaweiAPI:
         self.api_url = self.API_URL.format(host=host)
         self.session = requests.Session()
         self.log.debug("Connect to {host}".format(host=host))
+        self.host = host
         try:
             self.session.get(self.HOME_URL.format(host=host),
                              timeout=(5.0, 5.0))
@@ -151,6 +154,10 @@ class HuaweiAPI:
         else:
             return resp
 
+    def is_online(self):
+        response = os.system("ping -i 1 -c 1 %s >/dev/null 2>&1" % self.host)
+        return True if response == 0 else False
+
     def send_sms(self, number, text):
         d = OrderedDict()
         d['Index'] = -1
@@ -171,6 +178,30 @@ class HuaweiAPI:
     def check_notifications(self):
         return self.__api_request('monitoring/check-notifications')
 
+    """ @TODO: This code was written at 3 am, do it smarter! maybe remove the pinging logic to app code"""
+    def reboot(self):
+        start_time = time.time()
+        params = OrderedDict()
+        params['Control'] = 1
+        self.__api_post('device/control', params)
+        count = 60
+        up = 1
+        down = 0
+        up_again = 0
+        while count != 0:
+            is_online = self.is_online()
+            if up:
+                down = 1 if not is_online else 0
+                up = 0 if not is_online else 1
+            if down:
+                up_again = is_online
+            if up_again:
+                break
+            count = count - 1
+            time.sleep(1)
+        print("IP changed!")
+        print("Time elapsed: %d" % time.time() - start_time)
+
     def device_signal(self):
         return self.__api_request('device/signal')
 
@@ -185,4 +216,3 @@ class HuaweiAPI:
             return self.__api_request('net/net-mode-list')
         else:
             return self.__api_post('net/net-mode-list', params)
-
