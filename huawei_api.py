@@ -178,7 +178,7 @@ class HuaweiAPI:
     def check_notifications(self):
         return self.__api_request('monitoring/check-notifications')
 
-    """ @TODO: This code was written at 3 am, do it smarter! maybe remove the pinging logic to app code"""
+    """ @TODO: This code was written at 3 am, do it smarter!"""
     def reboot(self):
         start_time = time.time()
         params = OrderedDict()
@@ -199,8 +199,9 @@ class HuaweiAPI:
                 break
             count = count - 1
             time.sleep(1)
+
         print("IP changed!")
-        print("Time elapsed: %d" % time.time() - start_time)
+        print("Time elapsed: %.2f" % (time.time() - start_time))
 
     def device_signal(self):
         return self.__api_request('device/signal')
@@ -216,3 +217,4 @@ class HuaweiAPI:
             return self.__api_request('net/net-mode-list')
         else:
             return self.__api_post('net/net-mode-list', params)
+
